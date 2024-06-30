@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"net/http"
-	"path/filepath"
+	"os"
 )
 
 func main() {
@@ -12,50 +12,26 @@ func main() {
 
 	flag.Parse()
 
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	app := &application{
+		logger: logger,
+	}
+
 	mux := http.NewServeMux()
 
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static")})
 	mux.Handle("GET /static", http.NotFoundHandler())
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
-	mux.HandleFunc("GET /{$}", home)
-	mux.HandleFunc("GET /snippet/view/{id}", snippetView)
-	mux.HandleFunc("GET /snippet/create", snippetCreate)
-	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
+	mux.HandleFunc("GET /{$}", app.home)
+	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
+	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
+	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	log.Printf("starting server on %s", *addr)
+	logger.Info("starting server", slog.String("addr", *addr))
 
-	err := http.ListenAndServe(*addr, mux)
-	log.Fatal(err)
-}
-
-// Disables directory listings
-// when requesting static files.
-type neuteredFileSystem struct {
-	fs http.FileSystem
-}
-
-func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
-	f, err := nfs.fs.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	s, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	if s.IsDir() {
-		index := filepath.Join(path, "index.html")
-		if _, err := nfs.fs.Open(index); err != nil {
-			closeErr := f.Close()
-			if closeErr != nil {
-				return nil, closeErr
-			}
-
-			return nil, err
-		}
-	}
-
-	return f, nil
+	err := http.ListenAndServe(*addr, app.routes())
+	logger.Error(err.Error())
+	os.Exit(1)
 }
