@@ -1,10 +1,15 @@
 package main
 
 import (
-	"log/slog"
 	"net/http"
 	"path/filepath"
 )
+
+// The neuteredFileSystem struct disables directory listing
+// when requesting static files.
+type neuteredFileSystem struct {
+	fs http.FileSystem
+}
 
 // The routes() method returns a servemux containing our application routes.
 func (app *application) routes() *http.ServeMux {
@@ -20,12 +25,6 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
 	return mux
-}
-
-// The neuteredFileSystem struct disables directory listing
-// when requesting static files.
-type neuteredFileSystem struct {
-	fs http.FileSystem
 }
 
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
@@ -51,8 +50,4 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	}
 
 	return f, nil
-}
-
-type application struct {
-	logger *slog.Logger
 }
