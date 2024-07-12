@@ -11,8 +11,8 @@ type neuteredFileSystem struct {
 	fs http.FileSystem
 }
 
-// The routes() method returns a servemux containing our application routes.
-func (app *application) routes() *http.ServeMux {
+// The routes() method returns a servemux containing the application routes.
+func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static")})
@@ -24,7 +24,7 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	return mux
+	return app.logRequest(commonHeader(mux))
 }
 
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
