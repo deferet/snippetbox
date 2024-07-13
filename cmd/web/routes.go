@@ -24,7 +24,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	return app.logRequest(commonHeader(mux))
+	return app.recoverPanic(app.logRequest(commonHeader(mux)))
 }
 
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
