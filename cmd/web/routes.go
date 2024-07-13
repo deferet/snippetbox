@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"path/filepath"
+
+	"github.com/justinas/alice"
 )
 
 // The neuteredFileSystem struct disables directory listing
@@ -24,7 +26,9 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	return app.recoverPanic(app.logRequest(commonHeader(mux)))
+	standard := alice.New(app.recoverPanic, app.logRequest, commonHeader)
+
+	return standard.Then(mux)
 }
 
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
