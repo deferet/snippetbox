@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/DominikFeret/snippetbox/internal/models"
+	"github.com/deferet/snippetbox/internal/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )
