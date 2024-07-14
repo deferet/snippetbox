@@ -10,6 +10,13 @@ import (
 	"github.com/DominikFeret/snippetbox/internal/models"
 )
 
+type snippetCreateForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors map[string]string
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	snippets, err := app.snippets.Latest()
 	if err != nil {
@@ -49,6 +56,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+
 	app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
@@ -68,6 +79,13 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	fieldErrors := map[string]string{}
 
+	form := snippetCreateForm{
+		Title:       title,
+		Content:     content,
+		Expires:     expires,
+		FieldErrors: fieldErrors,
+	}
+
 	if isBlank(title) {
 		fieldErrors["title"] = "This field cannot be blank"
 	} else if utf8.RuneCountInString(title) > 100 { // use the utf8 function to account for 2-byte characters
@@ -82,12 +100,14 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		fieldErrors["expires]"] = "This field must be equal to 1, 7, or 365"
 	}
 
-	if len(fieldErrors) > 0 {
-		fmt.Fprint(w, fieldErrors)
+	if len(form.FieldErrors) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
 		return
 	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
