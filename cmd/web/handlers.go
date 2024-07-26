@@ -101,10 +101,10 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 }
 
 type userSignupForm struct {
-	Name                string `form: "name"`
-	Email               string `form: "email"`
-	Password            string `form: "password"`
-	validator.Validator `form: "-"`
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
