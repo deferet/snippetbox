@@ -11,6 +11,7 @@ import (
 	"github.com/go-playground/form/v4"
 )
 
+// Respond with a server error using the provided error message.
 func (app *application) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	var (
 		method = r.Method
@@ -22,10 +23,12 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
+// Respond with a client error using the provided status code.
 func (app *application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
+// Render a template page to w using the provided status, page, and data.
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
 	ts, ok := app.templateCache[page]
 	if !ok {
@@ -46,13 +49,16 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 	buf.WriteTo(w)
 }
 
+// Return a new template data struct.
 func (app *application) newTemplateData(r *http.Request) templateData {
 	return templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
 	}
 }
 
+// Decode a post form from r into dst (dst has to be a pointer).
 func (app *application) decodePostForm(r *http.Request, dst any) error {
 	err := r.ParseForm()
 	if err != nil {
@@ -71,4 +77,10 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	}
 
 	return nil
+}
+
+// Return true if the current request is from an authenticated user, otherwise
+// return false.
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }
